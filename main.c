@@ -10,11 +10,11 @@ int scelta;
 
 do {
   printf("SELEZIONARE UN'OPZIONE");
-  printf("*********MENU******");
-  printf("*1) IMPOSTA GIOCO *");
-  printf("*2) GIOCA         *");
-  printf("*3) TERMIINA GIOCO*");
-  printf("*******************");
+  printf("*********MENU******\n");
+  printf("*1) IMPOSTA GIOCO *\n");
+  printf("*2) GIOCA         *\n");
+  printf("*3) TERMIINA GIOCO*\n");
+  printf("*******************\n");
   scanf("%d", &scelta);
   while(getchar()=='\n');
 
@@ -36,6 +36,5 @@ do {
 }
 while(scelta < 4);
 }
-
 
 
