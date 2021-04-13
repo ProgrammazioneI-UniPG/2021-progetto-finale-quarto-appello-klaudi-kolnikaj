@@ -13,17 +13,18 @@ static void aggNellaLista(struct Stanza * );
 static int tipostanza();
 static void stampa_giocatori(int);
 const char * stampa_colori(int);
+const char * tipo_gioc(int);
 static void avanza(int);
-static void creazioneStanza(int i)
+static void creazioneStanza(int i);
 static void chiamata_emergenza(int);
 static void uccidi(int);
-
-
-unsigned short quest_da_finire;
+static void sabotaggio(int);
+static void usa_botola(int);
 void termina_gioco();
-void gioca();
+static void esegui_quest(int);
+unsigned short quest_da_finire;
 
-const char * stampa_colori(int);
+
 
 
 
@@ -53,7 +54,7 @@ static void aggNellaLista(struct Stanza * stanzanuova){
 
 void imposta_gioco() {
 
-  // 10 numeri random per colori    (però random mi dà numeri a volte diversi da [0-9]---HO LASCIATO STAMPARE I NUMERI APPOSTA perchè sorgono problemi come nome null raramente...
+  // 10 numeri random per colore
   int ct = 0, n = 0;
   int colori[10];
   for (size_t f = 0; f < 10; f++) {
@@ -66,7 +67,7 @@ void imposta_gioco() {
   }
 
   do {
-    printf("Quanti giocatori vuoi? min4 - MAX 10 4\n");
+    printf("\nQuanti giocatori vuoi? min4 - MAX 10\n");
     scanf("%hd", &ngiocatori);
   } while (ngiocatori < 4 || ngiocatori > 10);
   printf("Quante quest vuoi finire?\n");
@@ -80,14 +81,14 @@ void imposta_gioco() {
   stanzai -> sinistra = NULL;
   stanzai -> destra = NULL;
   stanzai ->  precedente = NULL;
-  stanzai -> emergenza = 0;
+  stanzai -> emergenza = false;
   aggNellaLista(stanzai);  // passo la stanza per aggiungerla alla lista
   int cImpostori = 0;        // tengo il conto dei impostori
   int tipo = 0;
 
   // creo i giocatori
   for (int i = 0; i < ngiocatori; i++) {
-    printf("%d\n", colori[i]);
+
     giocatori[i].posizione = (struct Stanza * ) malloc(sizeof(struct Stanza));
     giocatori[i].posizione = stanzai;
     giocatori[i].nome = colori[i];
@@ -101,7 +102,7 @@ void imposta_gioco() {
   int a = 0;
   do {
     printf("1) STAMPA GIOCATORI\n 2) INIZIA GIOCO\n");
-    scanf("%d", & a);
+    scanf("%d", &a);
   } while (a < 1 || a > 2);
   if (a == 1) {
     for (int a = 0; a < ngiocatori; a++) {
@@ -109,9 +110,11 @@ void imposta_gioco() {
     }
     do {
       printf("PREMI 1 PER INIZIARE");
-      scanf("%d", & a);
+      scanf("%d", &a);
     } while (a != 1);
+    gioca();
   }
+  if(a == 2) gioca();
 }
 
 
@@ -130,12 +133,13 @@ static int tipostanza() {//Assegno il tipo ad una stanza (fa ritornare un intero
 
 
 //avanzamento
-static void avanza(int i) {
+static void avanza(int i){
 
   int a = 0;
   do {
     printf("Dove vuoi andare ?");
     printf("1-Avanti\n 2-Sinistra\n 3-Destra\n");
+    scanf("%d", &a);
   }while (a > 3);
 
   if (a == 1) {
@@ -143,8 +147,10 @@ static void avanza(int i) {
       giocatori[i].posizione = giocatori[i].posizione -> avanti; // mi sposto nella stanza avanti
     } else {
       giocatori[i].posizione -> avanti = (struct Stanza * ) malloc(sizeof(struct Stanza)); //alloco la stanza avanti
-      giocatori[i].posizione -> avanti -> stanzap = giocatori[i].posizione; // gli assegno la posizione attuale alla stanza precedente
+      giocatori[i].posizione -> avanti -> precedente = giocatori[i].posizione; // gli assegno la posizione attuale alla stanza precedente
       giocatori[i].posizione = giocatori[i].posizione -> avanti; // spostamento stanza avanti
+      int sg = i;
+      creazioneStanza(sg);
     }
   }
 
@@ -153,8 +159,10 @@ static void avanza(int i) {
       giocatori[i].posizione = giocatori[i].posizione -> sinistra; // mi sposto nella stanza di sinistra
     } else {
       giocatori[i].posizione -> sinistra = (struct Stanza * ) malloc(sizeof(struct Stanza)); //alloco la stanza di sinistra
-      giocatori[i].posizione -> sinistra -> stanzap = giocatori[i].posizione; // gli assegno la posizione attuale alla stanza precedente
+      giocatori[i].posizione -> sinistra -> precedente = giocatori[i].posizione; // gli assegno la posizione attuale alla stanza precedente
       giocatori[i].posizione = giocatori[i].posizione -> sinistra; // spostamento nella stanza di sinistra
+      int sg = i;
+      creazioneStanza(sg);
     }
   }
 
@@ -163,8 +171,10 @@ static void avanza(int i) {
       giocatori[i].posizione = giocatori[i].posizione -> destra; // spostamento nella stanza di destra
     } else {
       giocatori[i].posizione -> destra = (struct Stanza * ) malloc(sizeof(struct Stanza)); //alloco la stanza di destra
-      giocatori[i].posizione -> destra -> stanzap = giocatori[i].posizione; // gli assegno la posizione attuale alla stanza precedente
+      giocatori[i].posizione -> destra -> precedente = giocatori[i].posizione; // gli assegno la posizione attuale alla stanza precedente
       giocatori[i].posizione = giocatori[i].posizione -> destra; // spostamento nella stanza di destra
+      int sg = i;
+      creazioneStanza(sg);
     }
   }
 }
@@ -178,7 +188,7 @@ static void creazioneStanza(int i) {
     giocatori[i].posizione -> avanti = NULL;
     giocatori[i].posizione -> sinistra = NULL;
     giocatori[i].posizione -> destra = NULL;
-    giocatori[i].posizione -> stanzap = NULL;
+    giocatori[i].posizione -> precedente = NULL;
     giocatori[i].posizione -> emergenza = false;
     aggNellaLista(giocatori[i].posizione);  // la aggiungo alla lista
   }
@@ -193,34 +203,35 @@ void gioca(){
       int giocvivi = 0;
       int impostori = 0;
 
-      if (giocatori == NULL) {            //in caso i giocatori fossero null significa che il gioco non è stato impostato
+      if (giocatori == NULL) {//in caso i giocatori fossero null significa che il gioco non è stato impostato
         printf("IMPOSTA ORA IL GIOCO\n");
-        imposta_gioco();               //chiamo quindi automaticamente il metodo imposta_gioco();
+        imposta_gioco();//chiamo quindi automaticamente il metodo imposta_gioco();
       }
-
-      for (size_t i = 0; i < ngiocatori; i++) {// conto quanti giocatori  vivi e quanti impostori
+      
+       // conto quanti giocatori  vivi e quanti impostori
+      for (size_t i = 0; i < ngiocatori; i++) {
         if (giocatori[i].stato == 0) giocvivi++;
         if (giocatori[i].stato == 1) impostori++;
       }
 
 
-
-      if (quest_da_finire > 0 && giocvivi != 0) {  //in caso ci fossero quest da fare e giocatori (si intende astronauti) vivi il gioco può svolgersi
+      //in caso ci fossero quest da fare e astronauti vivi il gioco può svolgersi
+      if (quest_da_finire > 0 && giocvivi != 0) {  
 
         do {
-          gioc = rand() % ngiocatori;       //chiedo un giocatore casuale
+          gioc = rand() % ngiocatori; //chiedo un giocatore casuale
         } while (giocatori[gioc].stato == 2 || giocatori[gioc].stato == 3); //fino a che il giocatore uscito non sarà un impostore o astronauta
         stampa_giocatori(gioc); // stampa giocatore selezionato
         printf("*******************************\n");
-        printf("*I GIOCATORI VIVI NELLA STANZA*\n");
-        printf("*******************************\n")
+        printf("\n*I GIOCATORI VIVI NELLA STANZA*\n");
+        printf("*******************************\n");
         for (size_t i = 0; i < ngiocatori; i++) {
           if (giocatori[gioc].posizione == giocatori[i].posizione) {
-            if (giocatori[i].stato == 2 || giocatori[i].stato == 3) { //faccio vedere SOLO chi e' morto e defenestrato (per correttezza)
+            if (giocatori[i].stato == 2 || giocatori[i].stato == 3) { //faccio vedere SOLO chi e' morto e defenestrato
               printf("\t%s\t%s\n", stampa_colori(giocatori[i].nome), tipo_gioc(giocatori[i].stato));
             } else printf("\t%s\n", stampa_colori(giocatori[i].nome));
           }
-          if ((giocatori[i].stato == 2) && (giocatori[i].posizione == giocatori[gioc].posizione) && (giocatori[gioc].posizione -> chiamata_emergenza)) { //per vedere se morti e emergenza
+          if ((giocatori[i].stato == 2) && (giocatori[i].posizione == giocatori[gioc].posizione) && (giocatori[gioc].posizione -> emergenza)) { //per vedere se morti e emergenza
             emerg = emerg + 1;
           }
         }
@@ -228,10 +239,10 @@ void gioca(){
           printf("NON CI SONO MORTI OPPURE EMERGENZA GIA' CHIAMATA\n");
         }
 
-        if (giocatori[gioc].stato == 0) {   //in caso si giochi con un astronauta
+        if (giocatori[gioc].stato == 0) {//in caso si giochi con un astronauta
           do {
             printf("1) Avanza\n2) Esegui Quest\n3)Chiama Emesrgenza\n");
-            scanf("%d", & s);
+            scanf("%d", &a);
           } while (a < 1 || a > 3 || (a == 3 && emerg > 0) || (a == 2 && giocatori[gioc].posizione -> tipo == 0) || (a == 2 && giocatori[gioc].posizione -> tipo == 3));  //condizioni (fa ripetere il menù se certe scelte non si possono fare, come ad esempio chiama emergenza se gia chiamata)
 
           switch (a) {
@@ -245,16 +256,16 @@ void gioca(){
             chiamata_emergenza(gioc);
             break;
           default:
-            printf("SCELTA NON CORRETTA ENTRA DI NUOVO\n");
+            printf("SCELTA NON CORRETTA, ENTRA DI NUOVO\n");
             break;
           }
         }
-        if (giocatori[gioC].stato == 1) {   // in caso si giochi con un impostore
+        if (giocatori[gioc].stato == 1) {// in caso si giochi con un impostore
 
           do {
             printf("1) Avanza\n2) Sabotaggio\n3) Chiama Emesrgenza\n4) Uccidi Giocatore\n5) Usa Botola\n");
             scanf("%d", & a);
-          } while (s < 1 || s > 5 || (s == 3 && emerg > 0) || (s == 5 && giocatori[giok].posizione -> tipo != 3) || (s == 2 && (giocatori[giok].posizione -> tipo != 1 && giocatori[giok].posizione -> tipo != 2)) || (s == 4 && gpinst == 0));
+          } while (a < 1 || a > 5 || (a == 3 && emerg > 0) || (a == 5 && giocatori[gioc].posizione -> tipo != 3) || (a == 2 && (giocatori[gioc].posizione -> tipo != 1 && giocatori[gioc].posizione -> tipo != 2)) || (a == 4 && ngioc == 0));
 
           switch (a) {
           case 1:
@@ -298,7 +309,7 @@ void termina_gioco(){
       struct Stanza * pross;                  //una stanza d'appoggio che puntera alla successiva di plist
 
       while (plist != NULL) {
-        pross = plist -> next;
+        pross = plist -> avanti;
         free(plist);
         plist = pross;
       }               //dealloco ogni stanza della lista
@@ -319,40 +330,40 @@ static void chiamata_emergenza(int i){
     int p1 = 0;
     int p2 = 0;
     int flag = 0;
-    if (!giocatori[i].posizione -> chiamata_emergenza) { // se non è mai stata chiamata
+    if (!giocatori[i].posizione -> emergenza) { // se non è mai stata chiamata
 
-      for (size_t a = 0; n < ngiocatori; a++) {
-        for (size_t b = 0; l < ngiocatori; b++) { // controllo se defenestrato
-          if (giocatori[l].stato == 3 && giocatori[i].posizione == giocatori[n].posizione) flag = 1;
+      for (size_t a = 0; p < ngiocatori; a++) {
+        for (size_t b = 0; p < ngiocatori; b++) { // controllo se defenestrato
+          if (giocatori[b].stato == 3 && giocatori[i].posizione == giocatori[a].posizione) flag = 1;
            }
             while (flag == 0) {
-                if (giocatori[i].posizione == giocatori[n].posizione && giocatori[n].stato == 1) { // controllo se fa parte della stanza
+                if (giocatori[i].posizione == giocatori[a].posizione && giocatori[a].stato == 1) { // controllo se fa parte della stanza
                 p1 = 30;
-                for (size_t c = 0; t < ngiocatori; c++) { //vedo tutti
-                  if (giocatori[n].posizione == giocatori[t].posizione && giocatori[t].stato == 1) {
+                for (size_t c = 0; c < ngiocatori; c++) { //vedo tutti
+                  if (giocatori[a].posizione == giocatori[c].posizione && giocatori[c].stato == 1) {
                     p1 = p1 - 30;
                   } // controllo quanti altri impostori ci sono nella stanz
-                  if (giocatori[n].posizione == giocatori[t].posizione && giocatori[t].stato == 0) {
+                  if (giocatori[a].posizione == giocatori[c].posizione && giocatori[c].stato == 0) {
                     p1 = p1 + 20;
                   } // controllo quanti altri astronauti ci sono nella stanz
                   if (p < p1) {
-                    giocatori[n].stato = 3;
+                    giocatori[a].stato = 3;
                     flag = 1;
                   }
                 }
               }
 
-        if (giocatori[i].posizione == giocatori[n].posizione && giocatori[n].stato == 0) { // controllo se fa parte della stanza
+        if (giocatori[i].posizione == giocatori[a].posizione && giocatori[a].stato == 0) { // controllo se fa parte della stanza
            p2 = 30;
               for (size_t c = 0; c < ngiocatori; c++) { //vedo tutti
-                if (giocatori[n].posizione == giocatori[t].posizione && giocatori[t].stato == 1) {
-                  pa = p2 + 30;
+                if (giocatori[a].posizione == giocatori[c].posizione && giocatori[c].stato == 1) {
+                  p2 = p2 + 30;
                 } // controllo quanti altri astronauti ci sono nella stanz
-                if (giocatori[n].posizione == giocatori[t].posizione && giocatori[t].stato == 0) {
-                  pa = p2 + 20;
+                if (giocatori[a].posizione == giocatori[c].posizione && giocatori[c].stato == 0) {
+                  p2 = p2 + 20;
                 } // controllo quanti altri impostori ci sono nella stanz
                 if (p < p2) {
-                  giocatori[n].stato = 3;
+                  giocatori[a].stato = 3;
                   flag = 1;
                 }
               }
@@ -360,7 +371,7 @@ static void chiamata_emergenza(int i){
 
           }
         }
-        giocatori[i].posizione -> chiamata_emergenza = true;
+        giocatori[i].posizione -> emergenza = true;
       }
     }
 
@@ -375,7 +386,7 @@ static void uccidi(int i) {
         if (probabilita < 100 && ugioc != 1) {
           printf("LO HAI UCCISO :%s", stampa_colori(giocatori[a].nome));
           giocatori[a].stato = 2; // muore
-          giocatori[a].posizione -> chiamata_emergenza = true; // per correttezza tolgo anche l'emergenza visto che ci sara una votazione a prescindere da esito +/-
+          giocatori[a].posizione -> emergenza = true; // per correttezza tolgo anche l'emergenza visto che ci sara una votazione a prescindere da esito +/-
           ugioc = 1; // flag per non uccidere piu di uno a volta (altrimenti farebbe una strage XD, ucciderebbe tutti)
         }
       }
@@ -386,7 +397,7 @@ static void uccidi(int i) {
         if (giocatori[i].posizione == giocatori[d].posizione) {
           prob_as = prob_as + 50;
         }
-        if (giocatori[d].posizione -> stanzap == giocatori[i].posizione) {
+        if (giocatori[d].posizione -> precedente == giocatori[i].posizione) {
           prob_as = prob_as + 20;
         }
       }
@@ -401,7 +412,7 @@ static void uccidi(int i) {
 
 static void usa_botola(int i) {
 
-        struct Stanza * stanzat = lista_stanze;  //puntatore alla lista
+        struct Stanza * stanzat = lista;  //puntatore alla lista
         int flag = 1;  // flag spostamento
 
         if (giocatori[i].posizione -> tipo == 3) {   //solo se stanze botola(condizione già vera nelle dell'impostore, tuttavia per un metodo piu corretto la rifaccio)
@@ -410,7 +421,7 @@ static void usa_botola(int i) {
               giocatori[i].posizione = stanzat;        // sposto l'impostore
               flag = 0;   // imposto il flag a 0
             }
-            stanzat = stanzat -> next;
+            stanzat = stanzat -> avanti;
           }
           if (flag == 1) {
             giocatori[i].posizione = (stanzat + rand() % sizeof stanzat);//in caso non dovessero esserci altre stanze botola lo si sposta in una casuale..
@@ -442,6 +453,9 @@ void esegui_quest(int i){
           printf("QUEST RIMASTE: %hu\n", quest_da_finire);
         }
 
+static void stampa_giocatori(int i){ // stampa un giocatore
+          printf("Nome: %s\n Tipo: %s\n Stanza: %d\n", stampa_colori(giocatori[i].nome), tipo_gioc(giocatori[i].stato), tipostanza(giocatori[i].posizione -> tipo));
+        }
 
 
 //stampa un nome
@@ -458,7 +472,7 @@ const char * stampa_colori(int i){ //stampa un nome
 
             case 1:
                 r= "arancione";
-            break:
+            break;
 
             case 2:
                 r= "giallo";
@@ -470,9 +484,9 @@ const char * stampa_colori(int i){ //stampa un nome
 
             case 4:
                 r= "nero";
-            break:
+            break;
 
-            ca5e 5:
+            case 5:
                 r= "celeste";
             break;
 
@@ -482,7 +496,7 @@ const char * stampa_colori(int i){ //stampa un nome
 
             case 7:
                 r= "blu";
-            break:
+            break;
 
             case 8:
                 printf("bianco");
@@ -498,7 +512,7 @@ const char * stampa_colori(int i){ //stampa un nome
 
 
 // stampa un tipo di giocatore
-  const char * tipo_giocatore(int i){
+  const char * tipo_gioc(int i){
 
   const char * r = NULL;
 
@@ -506,7 +520,7 @@ const char * stampa_colori(int i){ //stampa un nome
             case 0:
                 r= "astronauta";
             break;
-            case 1;
+            case 1:
                 r= "impostore";
             break;
             case 2:
@@ -531,7 +545,7 @@ const char * r = NULL;
             case 0:
                 r= "vuota";
             break;
-            case 1;
+            case 1:
                 r= "quest_semplice";
             break;
             case 2:
