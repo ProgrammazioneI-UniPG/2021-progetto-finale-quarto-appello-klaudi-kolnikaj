@@ -9,32 +9,31 @@ int main(void){
 int scelta;
 
 do {
-  printf("SELEZIONARE UN'OPZIONE");
-  printf("*********MENU******\n");
-  printf("*1) IMPOSTA GIOCO *\n");
-  printf("*2) GIOCA         *\n");
-  printf("*3) TERMIINA GIOCO*\n");
-  printf("*******************\n");
+  printf("\nSELEZIONARE UN'OPZIONE\n");
+  printf("\n*1) IMPOSTA GIOCO *\n");
+  printf("\n*2) GIOCA         *\n");
+  printf("\n*3) TERMIINA GIOCO*\n");
   scanf("%d", &scelta);
-  while(getchar()=='\n');
+  
 
 
   switch(scelta){
     case 1:
-        printf("HAI SELEZIONATO IMPOSTA GIOCO\n");
+    printf("HAI SELEZIONATO IMPOSTA GIOCO");
+    imposta_gioco();
         break;
     case 2:
-        printf("HAI SELEZIONATO GIOCA\n");
+    printf("HAI SELEZIONATO GIOCA");
+    gioca();
         break;
     case 3:
-        printf("HAI SELEZIONATO TERMINA GIOCO\n");
+    printf("HAI SELEZIONATO TERMINA GIOCO");
+    termina_gioco();
         break;
     default:
         printf("Il comando è sbagliato\n");
         break;
 }
+}while(scelta > 4);
+return 0;
 }
-while(scelta < 4);
-}
-
-
